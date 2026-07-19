@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "Nex Monie"
+version = "1.0.0"
+id = "artifacts/nex-monie"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 26147
+
+[services.development]
+run = "pnpm --filter @workspace/nex-monie run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/nex-monie", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/nex-monie/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "26147"
+BASE_PATH = "/"

@@ -3,20 +3,38 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Nex Monie fintech API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: wallet
+    description: Wallet and balance
+  - name: transactions
+    description: Transaction history
+  - name: airtime
+    description: Airtime purchase
+  - name: data
+    description: Data bundles
+  - name: bills
+    description: Bill payments
+  - name: transfers
+    description: Money transfers
+  - name: banks
+    description: Bank operations
+  - name: scan
+    description: QR/barcode scan pay
+  - name: users
+    description: User search
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +42,624 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /wallet:
+    get:
+      operationId: getWallet
+      tags: [wallet]
+      summary: Get wallet balance and info
+      responses:
+        "200":
+          description: Wallet info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallet"
+
+  /transactions:
+    get:
+      operationId: getTransactions
+      tags: [transactions]
+      summary: Get transaction history
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: List of transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Transaction"
+
+  /transactions/summary:
+    get:
+      operationId: getTransactionSummary
+      tags: [transactions]
+      summary: Get monthly inflow/outflow summary
+      responses:
+        "200":
+          description: Summary stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionSummary"
+
+  /airtime/networks:
+    get:
+      operationId: getNetworks
+      tags: [airtime]
+      summary: Get available mobile networks
+      responses:
+        "200":
+          description: List of networks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Network"
+
+  /airtime/purchase:
+    post:
+      operationId: purchaseAirtime
+      tags: [airtime]
+      summary: Purchase airtime
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AirtimeInput"
+      responses:
+        "200":
+          description: Purchase result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseResult"
+
+  /data/plans:
+    get:
+      operationId: getDataPlans
+      tags: [data]
+      summary: Get data plans for a network
+      parameters:
+        - name: network
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of data plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DataPlan"
+
+  /data/purchase:
+    post:
+      operationId: purchaseData
+      tags: [data]
+      summary: Purchase data bundle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DataPurchaseInput"
+      responses:
+        "200":
+          description: Purchase result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseResult"
+
+  /bills/categories:
+    get:
+      operationId: getBillCategories
+      tags: [bills]
+      summary: Get bill payment categories
+      responses:
+        "200":
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BillCategory"
+
+  /bills/providers:
+    get:
+      operationId: getBillProviders
+      tags: [bills]
+      summary: Get bill providers for a category
+      parameters:
+        - name: category
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of providers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BillProvider"
+
+  /bills/packages:
+    get:
+      operationId: getBillPackages
+      tags: [bills]
+      summary: Get packages for a bill provider
+      parameters:
+        - name: provider
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of packages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BillPackage"
+
+  /bills/validate:
+    post:
+      operationId: validateBill
+      tags: [bills]
+      summary: Validate customer/meter number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BillValidateInput"
+      responses:
+        "200":
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillValidateResult"
+
+  /bills/pay:
+    post:
+      operationId: payBill
+      tags: [bills]
+      summary: Pay a bill
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BillPayInput"
+      responses:
+        "200":
+          description: Payment result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseResult"
+
+  /banks:
+    get:
+      operationId: getBanks
+      tags: [banks]
+      summary: Get list of banks
+      responses:
+        "200":
+          description: List of banks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Bank"
+
+  /bank/resolve-account:
+    get:
+      operationId: resolveAccount
+      tags: [banks]
+      summary: Resolve bank account number
+      parameters:
+        - name: accountNumber
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: bankCode
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Account resolution result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountResolution"
+
+  /transfers/send:
+    post:
+      operationId: sendMoney
+      tags: [transfers]
+      summary: Send money to a recipient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferInput"
+      responses:
+        "200":
+          description: Transfer result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseResult"
+
+  /users/search:
+    get:
+      operationId: searchUsers
+      tags: [users]
+      summary: Search Nex users by username or phone
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of matching users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NexUser"
+
+  /scan/decode:
+    post:
+      operationId: decodeQr
+      tags: [scan]
+      summary: Decode a QR code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QrDecodeInput"
+      responses:
+        "200":
+          description: Decoded QR data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QrDecodeResult"
+
+  /scan/pay:
+    post:
+      operationId: scanPay
+      tags: [scan]
+      summary: Pay via scanned QR
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanPayInput"
+      responses:
+        "200":
+          description: Payment result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseResult"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    Wallet:
+      type: object
+      required: [availableBalance, ledgerBalance, accountNumber, accountName]
+      properties:
+        availableBalance:
+          type: number
+        ledgerBalance:
+          type: number
+        accountNumber:
+          type: string
+        accountName:
+          type: string
+        bankName:
+          type: string
+
+    Transaction:
+      type: object
+      required: [id, type, title, amount, category, timestamp, status]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [credit, debit]
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        amount:
+          type: number
+        category:
+          type: string
+        timestamp:
+          type: string
+        status:
+          type: string
+          enum: [success, pending, failed]
+        reference:
+          type: ["string", "null"]
+
+    TransactionSummary:
+      type: object
+      required: [totalInflow, totalOutflow, netGrowth, inflowChange, outflowChange]
+      properties:
+        totalInflow:
+          type: number
+        totalOutflow:
+          type: number
+        netGrowth:
+          type: number
+        inflowChange:
+          type: number
+        outflowChange:
+          type: number
+
+    Network:
+      type: object
+      required: [id, name, logo]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        logo:
+          type: string
+        color:
+          type: ["string", "null"]
+
+    AirtimeInput:
+      type: object
+      required: [networkId, phoneNumber, amount]
+      properties:
+        networkId:
+          type: string
+        phoneNumber:
+          type: string
+        amount:
+          type: number
+
+    DataPlan:
+      type: object
+      required: [id, title, validity, price]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        validity:
+          type: string
+        price:
+          type: number
+
+    DataPurchaseInput:
+      type: object
+      required: [networkId, phoneNumber, planId]
+      properties:
+        networkId:
+          type: string
+        phoneNumber:
+          type: string
+        planId:
+          type: string
+
+    BillCategory:
+      type: object
+      required: [id, name, icon]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        icon:
+          type: string
+
+    BillProvider:
+      type: object
+      required: [id, name, categoryId]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        categoryId:
+          type: string
+        logo:
+          type: ["string", "null"]
+
+    BillPackage:
+      type: object
+      required: [id, name, amount]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        amount:
+          type: number
+        description:
+          type: ["string", "null"]
+
+    BillValidateInput:
+      type: object
+      required: [providerId, customerRef]
+      properties:
+        providerId:
+          type: string
+        customerRef:
+          type: string
+
+    BillValidateResult:
+      type: object
+      required: [valid, customerName]
+      properties:
+        valid:
+          type: boolean
+        customerName:
+          type: string
+        address:
+          type: ["string", "null"]
+
+    BillPayInput:
+      type: object
+      required: [providerId, customerRef, amount]
+      properties:
+        providerId:
+          type: string
+        customerRef:
+          type: string
+        packageId:
+          type: ["string", "null"]
+        amount:
+          type: number
+
+    Bank:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+
+    AccountResolution:
+      type: object
+      required: [accountName, accountNumber]
+      properties:
+        accountName:
+          type: string
+        accountNumber:
+          type: string
+        bankName:
+          type: ["string", "null"]
+
+    TransferInput:
+      type: object
+      required: [type, amount]
+      properties:
+        type:
+          type: string
+          enum: [nex, bank]
+        recipientId:
+          type: ["string", "null"]
+        accountNumber:
+          type: ["string", "null"]
+        bankCode:
+          type: ["string", "null"]
+        amount:
+          type: number
+        narration:
+          type: ["string", "null"]
+
+    NexUser:
+      type: object
+      required: [id, displayName]
+      properties:
+        id:
+          type: string
+        displayName:
+          type: string
+        username:
+          type: ["string", "null"]
+        photoUrl:
+          type: ["string", "null"]
+        accountNumber:
+          type: ["string", "null"]
+
+    QrDecodeInput:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: string
+
+    QrDecodeResult:
+      type: object
+      required: [type, amount, recipientName]
+      properties:
+        type:
+          type: string
+        amount:
+          type: number
+        recipientName:
+          type: string
+        recipientId:
+          type: ["string", "null"]
+        accountNumber:
+          type: ["string", "null"]
+        bankName:
+          type: ["string", "null"]
+
+    ScanPayInput:
+      type: object
+      required: [qrData, amount]
+      properties:
+        qrData:
+          type: string
+        amount:
+          type: number
+        narration:
+          type: ["string", "null"]
+
+    PurchaseResult:
+      type: object
+      required: [success, reference, message]
+      properties:
+        success:
+          type: boolean
+        reference:
+          type: string
+        message:
+          type: string
+        transactionId:
+          type: ["string", "null"]
