@@ -21,6 +21,7 @@ import ActionsHub from '@/pages/ActionsHub';
 import UtilitiesHub from '@/pages/UtilitiesHub';
 import Support from '@/pages/Support';
 import RequestMoney from '@/pages/RequestMoney';
+import NotFound from '@/pages/not-found';
 import { NexLogo } from '@/components/ui/NexLogo';
 
 const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
@@ -209,10 +210,9 @@ function ClerkProviderWithRoutes() {
             <Route path="/actions-hub"><ProtectedRoute><ActionsHub /></ProtectedRoute></Route>
             <Route path="/utilities-hub"><ProtectedRoute><UtilitiesHub /></ProtectedRoute></Route>
             <Route path="/support"><ProtectedRoute><Support /></ProtectedRoute></Route>
+            <Route path="/request-money"><ProtectedRoute><RequestMoney /></ProtectedRoute></Route>
             
-            <Route>
-              <div className="min-h-screen flex items-center justify-center font-bold text-gray-400">404 Not Found</div>
-            </Route>
+            <Route component={NotFound} />
           </Switch>
           <Toaster />
         </TooltipProvider>

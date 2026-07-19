@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { Search, Star, TrendingUp, TrendingDown, ChevronRight, Bell } from 'lucide-react'
+import { Search, TrendingUp, Bell, X } from 'lucide-react'
 import { BottomNav } from '@/components/layout/BottomNav'
+import { useToast } from '@/hooks/use-toast'
 
 // ── Mock market data ──────────────────────────────────────────────────────────
 
@@ -64,9 +65,61 @@ function Spark({ points, up }: { points: number[], up: boolean }) {
   )
 }
 
+// ── Market detail sheet ───────────────────────────────────────────────────────
+
+function MarketDetailSheet({ item, onClose }: { item: typeof CRYPTO[0] | null; onClose: () => void }) {
+  if (!item) return null
+  const up = item.change >= 0
+  const priceStr = item.price >= 1000
+    ? item.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : item.price >= 1 ? item.price.toFixed(2) : item.price.toFixed(4)
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end" onClick={onClose}>
+      <div className="w-full bg-white rounded-t-[32px] p-6 pb-10 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-6" />
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-[22px] font-black text-[#1A1A1A]">{item.symbol}</h3>
+            <p className="text-[13px] text-gray-400 font-medium">{item.name}</p>
+          </div>
+          <button onClick={onClose} className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center active:scale-90">
+            <X size={18} className="text-gray-500" />
+          </button>
+        </div>
+
+        <div className="flex items-end gap-3 mb-6">
+          <span className="text-[36px] font-black text-[#1A1A1A] leading-none">{priceStr}</span>
+          <span className={`text-[15px] font-bold mb-1 px-2 py-0.5 rounded-lg ${up ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}>
+            {up ? '+' : ''}{item.change.toFixed(2)}%
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="bg-gray-50 rounded-2xl p-4">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">24h Volume</p>
+            <p className="text-[14px] font-bold text-[#1A1A1A]">{item.vol}</p>
+          </div>
+          <div className="bg-gray-50 rounded-2xl p-4">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Trend (7d)</p>
+            <p className={`text-[14px] font-bold ${up ? 'text-emerald-600' : 'text-red-500'}`}>{up ? '↑ Bullish' : '↓ Bearish'}</p>
+          </div>
+        </div>
+
+        <button
+          className="w-full py-4 bg-[#005F56] text-white font-bold rounded-2xl active:scale-95 transition-transform shadow-lg shadow-[#005F56]/20"
+          onClick={onClose}
+        >
+          Coming Soon — Trade {item.symbol.split('/')[0]}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Market row ────────────────────────────────────────────────────────────────
 
-function MarketRow({ item, isCrypto }: { item: typeof CRYPTO[0], isCrypto?: boolean }) {
+function MarketRow({ item, onClick }: { item: typeof CRYPTO[0]; onClick: () => void }) {
   const up = item.change >= 0
   const priceStr = item.price >= 1000
     ? item.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -75,7 +128,7 @@ function MarketRow({ item, isCrypto }: { item: typeof CRYPTO[0], isCrypto?: bool
     : item.price.toFixed(4)
 
   return (
-    <div className="flex items-center py-3.5 border-b border-gray-50 gap-3 active:bg-gray-50/80 transition-colors cursor-pointer">
+    <div onClick={onClick} className="flex items-center py-3.5 border-b border-gray-50 gap-3 active:bg-gray-50/80 transition-colors cursor-pointer">
       {/* Icon */}
       <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center shrink-0 font-black text-[11px] text-gray-600">
         {item.symbol.split('/')[0].slice(0, 3)}
@@ -102,6 +155,7 @@ function MarketRow({ item, isCrypto }: { item: typeof CRYPTO[0], isCrypto?: bool
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 
+
 const TABS = [
   { key: 'crypto', label: 'Crypto',  data: CRYPTO },
   { key: 'stocks', label: 'Stocks',  data: STOCKS },
@@ -117,6 +171,7 @@ export default function Finances() {
   const [tab, setTab] = useState<TabKey>('crypto')
   const [query, setQuery] = useState('')
   const [sortBy, setSortBy] = useState<'default' | 'change'>('default')
+  const [selected, setSelected] = useState<typeof CRYPTO[0] | null>(null)
 
   const current = TABS.find(t => t.key === tab)!
   let rows = [...current.data] as typeof CRYPTO
@@ -215,11 +270,12 @@ export default function Finances() {
           <div className="py-16 text-center text-gray-400 text-[14px] font-medium">No results for "{query}"</div>
         )}
         {rows.map(item => (
-          <MarketRow key={item.id} item={item as any} isCrypto={tab === 'crypto'} />
+          <MarketRow key={item.id} item={item as any} onClick={() => setSelected(item as any)} />
         ))}
       </div>
 
       <BottomNav />
+      <MarketDetailSheet item={selected} onClose={() => setSelected(null)} />
     </main>
   )
 }

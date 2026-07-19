@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { ChevronLeft, Copy, Check, Share2, QrCode, ArrowDownLeft } from 'lucide-react'
+import { ChevronLeft, Copy, Check, Share2, ArrowDownLeft } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
 import { Card } from '@/components/ui/card'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { useGetWallet } from '@workspace/api-client-react'
@@ -13,6 +14,11 @@ export default function RequestMoney() {
   const accountName = wallet?.accountName || '—'
   const accountNumber = wallet?.accountNumber || '—'
   const bankName = wallet?.bankName || 'Nex Monie'
+
+  // QR payload — bank-standard USSD-style string that mobile banking apps understand
+  const qrPayload = wallet
+    ? `NEX:${accountNumber}:${accountName}:${bankName}`
+    : ''
 
   const copyToClipboard = async (value: string, key: string) => {
     try {
@@ -98,15 +104,39 @@ export default function RequestMoney() {
           )}
         </Card>
 
-        {/* QR placeholder */}
+        {/* QR Code */}
         <Card className="border-none shadow-sm rounded-[24px] p-6 bg-white flex flex-col items-center gap-3">
-          <div className="w-36 h-36 rounded-[20px] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 text-gray-300">
-            <QrCode size={40} />
-            <span className="text-[10px] font-bold uppercase tracking-widest">QR Code</span>
-          </div>
+          {isLoading || !qrPayload ? (
+            <div className="w-44 h-44 rounded-[20px] bg-gray-100 animate-pulse" />
+          ) : (
+            <div className="p-3 bg-white rounded-[20px] shadow-inner border border-gray-100">
+              <QRCodeSVG
+                value={qrPayload}
+                size={160}
+                bgColor="#ffffff"
+                fgColor="#005F56"
+                level="M"
+                includeMargin={false}
+                imageSettings={{
+                  src: '/logo.svg',
+                  x: undefined,
+                  y: undefined,
+                  height: 28,
+                  width: 28,
+                  excavate: true,
+                }}
+              />
+            </div>
+          )}
           <p className="text-[12px] text-gray-400 font-medium text-center">
             Scan with any mobile banking app to send directly
           </p>
+          <button
+            onClick={() => copyToClipboard(accountNumber, 'qr')}
+            className="text-[11px] font-bold text-[#005F56] bg-[#E8F5F3] px-4 py-1.5 rounded-full active:scale-95 transition-all"
+          >
+            {copied === 'qr' ? '✓ Copied!' : 'Copy Account Number'}
+          </button>
         </Card>
 
         {/* Share button */}
